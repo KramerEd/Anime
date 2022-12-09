@@ -1,16 +1,9 @@
 import { gql } from "@apollo/client";
 
 const query = gql`
-	query getAllData($page: Int) {
-		Page(page: $page) {
-			media(type: ANIME) {
-				id
-				title {
-					english
-				}
-				description
-				bannerImage
-			}
+	mutation postLike($mediaId: Int) {
+		ToggleLike(id: $mediaId) {
+			id
 		}
 	}
 `;
@@ -18,9 +11,7 @@ const query = gql`
 // Define the config we'll need for our Api request
 const url = "https://graphql.anilist.co";
 
-export const getData = async (token: string, page: number) => {
-	console.log(token, "TOKEN");
-
+export const postLike = async (token: string, id: number) => {
 	fetch(url, {
 		method: "POST",
 		headers: {
@@ -30,7 +21,7 @@ export const getData = async (token: string, page: number) => {
 		},
 		body: JSON.stringify({
 			query: query,
-			variables: { page },
+			variables: { id },
 		}),
 	})
 		.then(handleResponse)

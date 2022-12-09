@@ -1,49 +1,17 @@
-import React, { useCallback, useMemo, useState } from "react";
-import {
-	ActivityIndicator,
-	Image,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View,
-} from "react-native";
-
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Heart from "../icons/HeartRed.svg";
-import HeartOff from "../icons/HeartBlack.svg";
 
 type Props = {
 	title: string;
 	description: string;
 	img: string;
+	handleDeleteLike: any;
 };
 
-function AnimeItem({ title, description, img }: Props) {
-	const [like, setLike] = useState(false);
+function LikedAnimeItem({ title, description, img, handleDeleteLike }: Props) {
 	const [load, setLoad] = useState(true);
 
-	const handleLike = useCallback(() => {
-		setLike(true);
-	}, []);
-	const handleUnLike = useCallback(() => {
-		setLike(false);
-	}, []);
-
-	const LikeComp = useMemo(
-		() => (
-			<TouchableOpacity onPress={handleUnLike}>
-				<Heart width={30} height={30} />
-			</TouchableOpacity>
-		),
-		[]
-	);
-	const UnLikeComp = useMemo(
-		() => (
-			<TouchableOpacity onPress={handleLike}>
-				<HeartOff width={30} height={30} />
-			</TouchableOpacity>
-		),
-		[]
-	);
 	return (
 		<View style={style.container}>
 			<View style={style.containerImages}>
@@ -55,15 +23,18 @@ function AnimeItem({ title, description, img }: Props) {
 							setLoad(false);
 						}}
 					/>
-					{load && <ActivityIndicator style={style.loader} />}
+					<TouchableOpacity onPress={handleDeleteLike}>
+						<Heart width={30} height={30} />
+					</TouchableOpacity>
 				</View>
-				{like ? LikeComp : UnLikeComp}
 			</View>
 			<Text style={style.title}>{title}</Text>
 			<Text>{description}</Text>
 		</View>
 	);
 }
+
+export default LikedAnimeItem;
 
 const style = StyleSheet.create({
 	loader: {
@@ -95,5 +66,3 @@ const style = StyleSheet.create({
 		borderRadius: 10,
 	},
 });
-
-export default AnimeItem;

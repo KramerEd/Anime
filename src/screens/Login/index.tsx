@@ -12,6 +12,15 @@ type Props = {};
 const LoginScreen = (props: Props) => {
 	const { navigate } = useNavigation();
 
+	const getToken = useCallback(async () => {
+		try {
+			const token = await AsyncStorage.getItem("token");
+			return token;
+		} catch (e) {
+			console.error(e);
+		}
+	}, []);
+
 	const storeToken = useCallback(async (code: string) => {
 		try {
 			await AsyncStorage.setItem("token", code);
