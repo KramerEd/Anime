@@ -1,17 +1,12 @@
+import { useMutation, useQuery } from "@apollo/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useMemo, useState } from "react";
-import {
-	View,
-	Text,
-	FlatList,
-	StyleSheet,
-	ActivityIndicator,
-} from "react-native";
-import AnimeItem from "../../components/AnimeItem";
-import { getLikedData } from "../../api/getLikedPosts";
+import { View, FlatList, StyleSheet, ActivityIndicator } from "react-native";
+import { Text } from "react-native-svg";
 import LikedAnimeItem from "../../components/LikedAnimeItem";
-import { postLike } from "../../api/postLike";
+import { GET_LIKED_ANIME } from "../../query/anime";
+import { POST_LIKE } from "../../query/like";
 
 type Props = {};
 
@@ -43,39 +38,44 @@ const dummy = [
 
 function AnimeList({}: Props) {
 	const [list, setList] = useState([]);
-	const getToken = useCallback(async () => {
-		try {
-			const token = await AsyncStorage.getItem("token");
-			return token;
-		} catch (e) {
-			console.error(e);
-		}
-	}, []);
+	const { data, loading, error } = useQuery(GET_LIKED_ANIME);
+	const [mutateLike] = useMutation(POST_LIKE);
 
-	const handleFetch = async () => {
-		try {
-			const token = await getToken();
+	if (loading) {
+		return (
+			<View style={style.flatList}>
+				<ActivityIndicator />
+			</View>
+		);
+	}
+	if (error) {
+		return (
+			<View style={style.flatList}>
+				<Text>{error.message}</Text>
+			</View>
+		);
+	}
 
-			const { data } = await getLikedData(token as string, 1);
-
-			setList(data);
-		} catch (error) {
-			setList([...dummy] as any);
-		}
-	};
 	useFocusEffect(
 		useCallback(() => {
-			handleFetch();
+			if (!loading) {
+				setList(data.getData());
+			}
 		}, [])
 	);
-
 	const filterAnime = useMemo(() => dummy.filter(({ like }) => like), []);
 
 	const handleDislike = useCallback(async (id: number) => {
-		const token = await getToken();
-
 		filterAnime.filter(({ id }: any) => id === id);
-		await postLike(token, id);
+
+		mutateLike({
+			variables: { mediaId: id },
+			optimisticResponse: {
+				ToggleLike: {
+					id: id,
+				},
+			},
+		});
 	}, []);
 
 	return (

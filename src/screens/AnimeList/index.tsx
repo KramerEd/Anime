@@ -1,15 +1,15 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@apollo/client";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useState } from "react";
 import {
-	View,
-	Text,
+	ActivityIndicator,
 	FlatList,
 	StyleSheet,
-	ActivityIndicator,
+	Text,
+	View,
 } from "react-native";
-import { getData } from "../../api/getAnime";
 import AnimeItem from "../../components/AnimeItem";
+import { GET_ALL_ANIME } from "../../query/anime";
 
 const dummy = [
 	{
@@ -37,49 +37,37 @@ const dummy = [
 
 function AnimeList() {
 	const [list, setList] = useState([]);
-	const [message, setMessage] = useState("");
-	const getToken = useCallback(async () => {
-		try {
-			const token = await AsyncStorage.getItem("token");
-			return token;
-		} catch (e) {
-			console.error(e);
-		}
-	}, []);
+	const { data, loading, error } = useQuery(GET_ALL_ANIME);
 
-	const handleFetch = async () => {
-		try {
-			const token = await getToken();
+	if (loading) {
+		return (
+			<View style={style.flatList}>
+				<ActivityIndicator />
+			</View>
+		);
+	}
+	if (error) {
+		return (
+			<View style={style.flatList}>
+				<Text>{error.message}</Text>
+			</View>
+		);
+	}
 
-			const { data } = await getData(token as string, 1);
-
-			setList(data);
-		} catch (error) {
-			setMessage("No data.");
-			setList([...dummy] as any);
-			console.error(error);
-		}
-	};
 	useFocusEffect(
 		useCallback(() => {
-			handleFetch();
+			if (!loading) {
+				setList(data.getData());
+			}
 		}, [])
 	);
 
 	return (
-		<>
-			{list.length ? (
-				<FlatList
-					style={{ padding: 10 }}
-					data={dummy}
-					renderItem={({ item }) => <AnimeItem {...(item as any)} />}
-				/>
-			) : (
-				<View style={style.flatList}>
-					<ActivityIndicator />
-				</View>
-			)}
-		</>
+		<FlatList
+			style={{ padding: 10 }}
+			data={list}
+			renderItem={({ item }) => <AnimeItem {...(item as any)} />}
+		/>
 	);
 }
 

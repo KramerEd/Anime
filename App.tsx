@@ -1,29 +1,54 @@
 import { NavigationContainer } from "@react-navigation/native";
-import { StyleSheet, Text, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "./src/screens/Login/index";
-import WelcomeScreen from "./src/screens/Welcome";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { AnimeList, LikeList } from "./src/screens";
 import AuthorizedStack from "./src/routes/AuthorizedStack";
+import {
+	ApolloClient,
+	ApolloLink,
+	ApolloProvider,
+	concat,
+	HttpLink,
+	InMemoryCache,
+} from "@apollo/client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Stack = createNativeStackNavigator();
 
+const httpLink = new HttpLink({ uri: "https://graphql.anilist.co" });
+
+const authMiddleware = new ApolloLink((operation, forward) => {
+	operation.setContext(({ headers = {} }) => ({
+		headers: {
+			...headers,
+			authorization: AsyncStorage.getItem("token") || null,
+		},
+	}));
+
+	return forward(operation);
+});
+
+const client = new ApolloClient({
+	link: concat(authMiddleware, httpLink),
+	cache: new InMemoryCache(),
+});
+
 export default function App() {
 	return (
-		<NavigationContainer>
-			<Stack.Navigator>
-				<Stack.Screen
-					name="Login"
-					component={LoginScreen}
-					options={{ headerShown: false }}
-				/>
-				<Stack.Screen
-					name="TabStack"
-					component={AuthorizedStack}
-					options={{ headerShown: false }}
-				/>
-			</Stack.Navigator>
-		</NavigationContainer>
+		<ApolloProvider client={client}>
+			<NavigationContainer>
+				<Stack.Navigator>
+					<Stack.Screen
+						name="Login"
+						component={LoginScreen}
+						options={{ headerShown: false }}
+					/>
+					<Stack.Screen
+						name="TabStack"
+						component={AuthorizedStack}
+						options={{ headerShown: false }}
+					/>
+				</Stack.Navigator>
+			</NavigationContainer>
+		</ApolloProvider>
 	);
 }
